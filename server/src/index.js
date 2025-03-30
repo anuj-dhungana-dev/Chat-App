@@ -3,9 +3,10 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dataBaseConnection from "./lib/db.js";
+import authRoutes from "./routers/auth.routers.js";
+// import messageRoutes from "./routers/messages.routers.js";
 dotenv.config();
 const app = express();
-
 //global middleware
 app.use(express.json());
 app.use(cookieParser());
@@ -16,7 +17,7 @@ app.use(
   })
 );
 //Routers
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 // app.use("/api/messages", messageRoutes);
 
 // listen server

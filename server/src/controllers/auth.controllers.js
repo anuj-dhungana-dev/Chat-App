@@ -1,46 +1,41 @@
-import User from "../models/User.js";
+import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Joi from "joi";
 import { generateTokenAndSetCookies } from "../lib/generateTokenAndSetCookies.js";
 dotenv.config();
 
-const userSchema = Joi.object({
-  firstName: Joi.string().min(2).max(30).required(),
-  middleName: Joi.string().allow(""),
-  lastName: Joi.string().min(2).max(30).required(),
-  userName: Joi.string().min(3).max(20).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string()
-    .min(8)
-    .pattern(/(?=.*[A-Z])/)
-    .message("Must contain at least one uppercase letter")
-    .pattern(/(?=.*\d)/)
-    .message("Must contain at least one number")
-    .pattern(/(?=.*[@$!%*?&])/)
-    .message("Must contain at least one special character")
-    .required(),
-  gender: Joi.string().valid("male", "female", "other").required(),
-});
+// const userSchema = Joi.object({
+//   firstName: Joi.string().min(2).max(30).required(),
+//   middleName: Joi.string().allow(""),
+//   lastName: Joi.string().min(2).max(30).required(),
+//   userName: Joi.string().min(3).max(20).required(),
+//   email: Joi.string().email().required(),
+//   password: Joi.string()
+//     .min(8)
+//     .pattern(/(?=.*[A-Z])/)
+//     .message("Must contain at least one uppercase letter")
+//     .pattern(/(?=.*\d)/)
+//     .message("Must contain at least one number")
+//     .pattern(/(?=.*[@$!%*?&])/)
+//     .message("Must contain at least one special character")
+//     .required(),
+//   gender: Joi.string().valid("male", "female", "other").required(),
+// });
 
 export const signUp = async (req, res) => {
   try {
-    const { error } = userSchema.validate(req.body);
-    if (error)
-      return res
-        .status(400)
-        .json({ success: false, message: error.details[0].message });
+    // Validate user input
+    // const { error } = userSchema.validate(req.body);
+    // if (error) {
+    //   return res
+    //     .status(400)
+    //     .json({ success: false, message: error.details[0].message });
+    // }
 
-    const {
-      firstName,
-      middleName,
-      lastName,
-      userName,
-      email,
-      password,
-      gender,
-    } = req.body;
+    const { firstName, lastName, userName, email, password, gender } = req.body;
 
+    // Check if the email is already used
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
@@ -48,26 +43,40 @@ export const signUp = async (req, res) => {
         .json({ success: false, message: "Email already used" });
     }
 
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Create a new user
     const user = await User.create({
       firstName,
-      middleName,
       lastName,
       userName,
       email,
       password: hashedPassword,
       gender,
+      //Ensure lastUsernameUpdate is properly set
+      lastUsernameUpdate: new Date(),
     });
-    generateTokenAndSetCookies(res, user._id);
 
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      newUser,
-    });
+    if (user) {
+      // Generate token and set cookies
+      generateTokenAndSetCookies(res, user._id);
+
+      // Remove password from response
+      const newUser = user.toObject();
+      delete newUser.password;
+
+      res.status(201).json({
+        success: true,
+        message: "User registered successfully",
+        newUser,
+      });
+    } else {
+      res.status(400).json({ message: "Invalid user data" });
+    }
   } catch (error) {
+    console.error("Signup error:", error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -93,7 +102,8 @@ export const logIn = async (req, res) => {
     generateTokenAndSetCookies(res, user._id);
     // response without Password
     const userResponse = user.toObject();
-    delete user.password;
+    delete userResponse.password;
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -120,8 +130,8 @@ export const logOut = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { firstName, middleName, lastName, userName, gender } = req.body;
-    const userId = req.user.id;
+    const { firstName, lastName, userName, gender } = req.body;
+    const userId = req.userid;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -151,7 +161,6 @@ export const updateProfile = async (req, res) => {
     }
 
     user.firstName = firstName;
-    user.middleName = middleName;
     user.lastName = lastName;
     user.gender = gender;
 

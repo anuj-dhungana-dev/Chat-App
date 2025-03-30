@@ -31,13 +31,16 @@ const userSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ["Female", "Male"],
+      enum: ["female", "male", "other"],
       required: true,
-      minlength: 6,
     },
     profilePic: {
       type: String,
-      minlength: 6,
+      default: "",
+    },
+    lastUsernameUpdate: {
+      type: Date,
+      default: Date.now,
     },
   },
   {
