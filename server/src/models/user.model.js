@@ -36,7 +36,6 @@ const userSchema = new mongoose.Schema(
     },
     profilePic: {
       type: String,
-      default: "",
     },
     lastUsernameUpdate: {
       type: Date,

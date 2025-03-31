@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import Joi from "joi";
 import { generateTokenAndSetCookies } from "../lib/generateTokenAndSetCookies.js";
+import cloudinary from "../lib/cloudinary.js";
 dotenv.config();
 
 // const userSchema = Joi.object({
@@ -130,48 +131,29 @@ export const logOut = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { firstName, lastName, userName, gender } = req.body;
-    const userId = req.userid;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    const { profilePic } = req.body;
+    const userId = req.userId;
+    console.log(profilePic);
+    if (!profilePic) {
+      return res.status(400).json({
+        success: false,
+        message: "Image required",
+      });
     }
-
-    if (req.body.email && req.body.email !== user.email) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email cannot be updated" });
-    }
-
-    if (userName && user.userName !== userName) {
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-      if (user.lastUsernameUpdate && user.lastUsernameUpdate > oneMonthAgo) {
-        return res.status(400).json({
-          success: false,
-          message: "Username can only be updated once a month",
-        });
-      }
-      user.userName = userName;
-      user.lastUsernameUpdate = new Date();
-    }
-
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.gender = gender;
-
-    await user.save();
-
+    const userResponse = await cloudinary.uploader.upload(profilePic);
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: userResponse.secure_url },
+      { new: true }
+    );
     res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
+      message: "Profile Picture updated successfully",
       user,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server Error", error: error.message });
   }
 };

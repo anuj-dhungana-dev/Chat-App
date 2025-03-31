@@ -5,6 +5,7 @@ import {
   signUp,
   updateProfile,
 } from "../controllers/auth.controllers.js";
+import { verifyAuth } from "../middleware/verifyAuth.js";
 
 const Router = express.Router();
 
@@ -12,6 +13,6 @@ const Router = express.Router();
 Router.post("/signup", signUp);
 Router.post("/login", logIn);
 Router.post("/logout", logOut);
-Router.post("/update", updateProfile);
+Router.put("/update", verifyAuth, updateProfile);
 
 export default Router;
