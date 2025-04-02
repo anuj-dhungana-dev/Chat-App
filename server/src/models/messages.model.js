@@ -17,17 +17,17 @@ const messageSchema = new mongoose.Schema({
   image: {
     type: String,
   },
-  file: {
-    fileName: {
-      type: String,
-    },
-    fileType: {
-      type: String,
-    },
-    fileUrl: {
-      type: String,
-    },
-  },
+  // file: {
+  //   fileName: {
+  //     type: String,
+  //   },
+  //   fileType: {
+  //     type: String,
+  //   },
+  //   fileUrl: {
+  //     type: String,
+  //   },
+  // },
 });
 
 const Message = mongoose.model("Message", messageSchema);

@@ -1,3 +1,5 @@
+import cloudinary from "../lib/cloudinary.js";
+import Message from "../models/messages.model.js";
 import User from "../models/user.model.js";
 
 // get user for side bar not including yours
@@ -36,7 +38,29 @@ export const getMessages = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-export const sendMessages = (req, res) => {
+export const sendMessages = async (req, res) => {
   try {
-  } catch (error) {}
+    const { text, image } = req.body;
+    const { id: receiverId } = req.params;
+    const senderId = req.userId;
+    let imageUrl;
+    if (imageUrl) {
+      const uploadResponse = await cloudinary.uploader.upload(image);
+      imageUrl = uploadResponse.secure_url;
+    }
+    const newMessage = new Message({
+      senderId,
+      receiverId,
+      text,
+      image: imageUrl,
+    });
+    await newMessage.save();
+    res.status(400).json({
+      success: true,
+      newMessage,
+    });
+  } catch (error) {
+    console.log(`Error in sendMessages Controller:-${error.message}`);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
 };
